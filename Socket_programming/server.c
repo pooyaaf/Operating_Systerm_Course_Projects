@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 
+#include "constant.h"
+
 #define LocalPort 8082
 
 int setupServer(int port)
@@ -28,7 +30,7 @@ int setupServer(int port)
         printf("Error in bind()\n");
         return -1;
     }
-    if (listen(server_fd, 4) < 0)
+    if (listen(server_fd, MAX_REQUEST) < 0)
     {
         printf("Error in listen()\n");
         return -1;
@@ -51,7 +53,7 @@ int numOnline[50]={0}; // no of  online players in 50 rooms
 int availablePort = LocalPort+1;
 int trace = 0 ; // first available room for player 
 
-int clientType(char buffer[], int clientFD, int type)
+int checkClientType(char buffer[], int clientFD, int type)
 {
     if (type > 0 && type < 3)
     {
@@ -66,6 +68,7 @@ int clientType(char buffer[], int clientFD, int type)
                 printf("!!!Hooray %d & %d  Match found!New port generated\n", numClient[0][trace], numClient[1][trace]);
              
                 //  printf("debug %s\n", buffer);
+                //fill the buffer with <- port , client[0] , client[1]
                 sprintf(buffer, "%d %d %d", availablePort,  numClient[0][trace], numClient[1][trace]);
                 trace += 1; // move to the next room
                 availablePort += 1;
@@ -76,6 +79,7 @@ int clientType(char buffer[], int clientFD, int type)
         else{
             //client fd is a viewer
                 //show list available rooms:
+                
         }
     }
     else
@@ -96,16 +100,19 @@ int main(int argc, char const *argv[])
     if (argv[1] > 0)
     {
         server_fd = setupServer(atoi(argv[1]));
-        printf("Server port has been set on = %s\n ", argv[1]);
+        printf("Server is running on port %s... \n ", argv[1]);
     }
-    else
+    else{
         server_fd = setupServer(LocalPort);
+        printf("Server is running ... \n");   
+    }
+        
 
     FD_ZERO(&master_set);
     max_sd = server_fd;
     FD_SET(server_fd, &master_set);
 
-    write(1, "Server is running\n\n", 18);
+   
 
     int basePort = LocalPort + 1;
 
@@ -122,8 +129,8 @@ int main(int argc, char const *argv[])
                     if (new_socket > max_sd)
                         max_sd = new_socket;
                     printf("New client connected. fd = %d\n", new_socket);
-                    char chooseType[] = "Select your type with number : \n (1- Player && 2- Spectator) : \n";
-                    send(new_socket, chooseType, strlen(chooseType), 0);
+                    sprintf(buffer, "%d \n Select your type with number : \n (1- Player && 2- Spectator) : \n", new_socket);
+                    send(new_socket, buffer, strlen(buffer), 0);
                     memset(buffer, 0, 1024);
                 }
                 
@@ -137,11 +144,12 @@ int main(int argc, char const *argv[])
                         FD_CLR(i, &master_set);
                         continue;
                     }
+                   
                     int type = atoi(&buffer[0]);
-                    if(clientType(buffer,i,type)==1){
+                    if(checkClientType(buffer,i,type)==1){
                         for(int i=0;i<2;i++){
-                            //printf("debug %s\n", buffer);
-                            send(numClient[i][trace], buffer, strlen(buffer), 0);
+                            printf("debug %s\n", buffer);
+                            send(numClient[i][trace-1], buffer, strlen(buffer), 0);
                         }
                         printf("Success!\n");
                     }

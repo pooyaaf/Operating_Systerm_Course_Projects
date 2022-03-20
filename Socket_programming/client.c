@@ -30,6 +30,100 @@ int connectServer(int port)
 
     return fd;
 }
+
+
+//UDP :
+// int turns[9][2]={
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0}
+// };
+
+void alarm_handler(int sig)
+{
+    printf("Times out!\n");
+}
+
+void Groom(int t1, int t2,int id)
+{
+    //UDP set-up
+    int sock, broadcast = 1, opt = 1;
+    char buffer[1024] = {0};
+    struct sockaddr_in bc_address;
+
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
+    bc_address.sin_family = AF_INET;
+    bc_address.sin_port = htons(roomPort);
+    bc_address.sin_addr.s_addr = inet_addr("192.168.1.255");
+
+    bind(sock, (struct sockaddr *)&bc_address, sizeof(bc_address));
+    // 
+   // int turns[9]={1,0,1,0,1,0,1,0,1}; // X - O
+     int turns[9][2] = {
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2}
+        };
+    signal(SIGALRM, alarm_handler);
+    siginterrupt(SIGALRM, 1);
+    int indexAnswer = 0;
+    for (int j = 0; j < 9; j++)
+    {
+        if (turns[j][0] == id)
+        {
+            memset(buffer, 0, 1024);
+            printf("Your Turn\n");
+            int read_ret = 0;
+            if (j % 2 == 0)
+            {
+                printf("You have 60 seconds to play,player 1:(X)\n");
+                alarm(60);
+                read_ret = read(0, buffer, 1024);
+                alarm(0);
+                printf("\n");
+            }
+            else
+            {
+                printf("You have 60 seconds to play,player 2:(O)\n");
+                alarm(60);
+                read_ret = read(0, buffer, 1024);
+                alarm(0);
+                printf("\n");
+            }
+            if (read_ret < 0)
+            {
+                sprintf(buffer, "Time is over for %d\n", id);
+            }
+            sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
+            recv(sock, buffer, 1024, 0);
+        }
+        else
+        {
+            memset(buffer, 0, 1024);
+            printf("Turn for others!\nWait...\n\n");
+            recv(sock, buffer, 1024, 0);
+            
+            printf("%s\n", buffer);
+        }
+    }
+    
+}
+//
 int main(int argc, char const *argv[])
 {
     int fd;
@@ -47,23 +141,25 @@ int main(int argc, char const *argv[])
         return 0;
 
     recv(fd, buff, 1024, 0);
-    printf("Server said: %s\n", buff);
+    int id = atoi(&buff[0]);
+    // printf("buffer --> %s",&buff[0]);
+   // printf("buffer --> %d\n",id);
+    printf("Server said, you're client %s ", buff);
     memset(buff, 0, 1024);
     int turn1, turn2;
     while (1)
     {
-        read(0, buff, 1024);
+        read(0, buff, 1024); // get client type in shell
         send(fd, buff, strlen(buff), 0);
         printf("Wait for Server response!\n");
-        printf("roomport is: %d",roomPort);
+        printf("roomport is: %d\n",roomPort);
         recv(fd, buff, 1024, 0);
         roomPort = atoi(&buff[0]);
-        printf("roomport is: %d",roomPort);
         if (roomPort > LocalPort)
         {
             turn1 = atoi(&buff[4]);
             turn2 = atoi(&buff[6]);
-            printf("Server said: on Port %d: Welcome to your question room! \n ", roomPort);
+            printf("Server said: on Port %d:\n Welcome to your question room! \n ", roomPort);
             break;
         }
         else
@@ -72,10 +168,11 @@ int main(int argc, char const *argv[])
         }
         memset(buff, 0, 1024);
     }
-    if (roomPort > 0)
+     if (roomPort > 0)
     {
-        printf("Turns: %d  %d! \n ", turn1, turn2);
+        printf("Players are: %d %d! \n ", turn1, turn2);
+        printf("__________________________ \n ");
+        Groom(turn1,turn2,id);
     }
-
     return 0;
 }
