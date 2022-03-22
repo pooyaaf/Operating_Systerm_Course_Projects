@@ -7,14 +7,54 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <signal.h>
+#include "constant.h"
 
 #define LocalPort 8082
-int roomPort = 0;
-int turns[3][3] = {
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, 1}};
+///
+char board[3][3];
+const char PLAYER = 'X';
+const char COMPUTER = 'O';
 
+void resetBoard()
+{
+   for(int i = 0; i < 3; i++)
+   {
+      for(int j = 0; j < 3; j++)
+      {
+         board[i][j] = ' ';
+      }
+   }
+}
+void printBoard()
+{
+  
+   printf(" %c | %c | %c ", board[0][0], board[0][1], board[0][2]);
+   printf("\n---|---|---\n");
+   printf(" %c | %c | %c ", board[1][0], board[1][1], board[1][2]);
+   printf("\n---|---|---\n");
+   printf(" %c | %c | %c ", board[2][0], board[2][1], board[2][2]);
+   printf("\n");
+}
+int checkFreeSpaces()
+{
+   int freeSpaces = 9;
+
+   for(int i = 0; i < 3; i++)
+   {
+      for(int j = 0; j < 3; j++)
+      {
+         if(board[i][j] != ' ')
+         {
+            freeSpaces--;
+         }
+      }
+   }
+   return freeSpaces;
+}
+
+///
+int roomPort = 0;
 int connectServer(int port)
 {
     int fd;
@@ -35,8 +75,28 @@ int connectServer(int port)
     return fd;
 }
 
-void QRoom(int t1, int t2, int t3)
+
+//UDP :
+// int turns[9][2]={
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0},
+//     {0,1},
+//     {1,0}
+// };
+
+void alarm_handler(int sig)
 {
+    printf("Times out!\n");
+}
+
+void Groom(int t1, int t2,int id)
+{
+    //UDP set-up
     int sock, broadcast = 1, opt = 1;
     char buffer[1024] = {0};
     struct sockaddr_in bc_address;
@@ -50,33 +110,90 @@ void QRoom(int t1, int t2, int t3)
     bc_address.sin_addr.s_addr = inet_addr("192.168.1.255");
 
     bind(sock, (struct sockaddr *)&bc_address, sizeof(bc_address));
-
-    while (1)
+    // 
+   // int turns[9]={1,0,1,0,1,0,1,0,1}; // X - O
+     int turns[9][2] = {
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2},
+        {t2, t1},
+        {t1, t2}
+        };
+    signal(SIGALRM, alarm_handler);
+    siginterrupt(SIGALRM, 1);
+    int indexAnswer = 0;
+     char winner = ' ';
+     char response = ' ';
+    // steps[CSTEPS][100];
+    //int stepIndex =0 ;
+    resetBoard();
+    for (int j = 0; j < 9; j++)
     {
-        memset(buffer, 0, 1024);
-        for (int i = 0; i < 3; i++)
-        { //for first q
-            for (int j = 0; j < 3; j++)
-            { // ask
-                for (int z = 0; z < 3; z++)
-                { //answer
-                    if (turns[j][z] == 1)
-                    {
-                        printf("turn for %d of list:\n", z + 1);
-                        read(0, buffer, 1024);
-                        int a = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
-                    }
-                    if (turns[j][z] == 0)
-                    {
+        if(winner == ' ' && checkFreeSpaces() != 0)
+        {
+                        //printBoard();
+                        if (turns[j][0] == id)
+                        {
+                        memset(buffer, 0, 1024);
+                        printf("Your Turn\n");
+                        int read_ret = 0;
+                        // -- player Move
+                        if (j % 2 == 0)
+                        {
+                            printf("You have 60 seconds to play,player 1:(X)\n Enter row(1-3)+space+col(1-3):\n");
+                            alarm(60);
+                            read_ret = read(0, buffer, 1024);
+                            // ASCII TB 1 -> 49
+                            alarm(0);
+                            printf("\n");
+                        }
+                        // -- computer Move
+                        else
+                        {
+                            printf("You have 60 seconds to play,player 2:(O)\n Enter row(1-3)+space+col(1-3):\n");
+                            alarm(60);
+                            read_ret = read(0, buffer, 1024);
+                            // ASCII TB 1 -> 49
+                            alarm(0);
+                            printf("\n");
+                        }
+                        if (read_ret < 0)
+                        {
+                            sprintf(buffer, "Time is over for %d\n", id);
+                        }
+                        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
                         recv(sock, buffer, 1024, 0);
-                        printf("%s\n", buffer);
-                    }
-                }
-            }
-        }
-    }
-}
 
+                        if(sock%2==0)
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                        else
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+                       
+                       
+                    }
+                    else
+                    {
+                        memset(buffer, 0, 1024);
+                        printf("Turn for others!\nWait...\n\n");
+                        recv(sock, buffer, 1024, 0);
+                        if(sock%2==0)
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+                        else
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                       
+                        printf("%s\n", buffer);
+                    }   
+                     printBoard();          
+        }
+        
+    }
+    
+}
+//
 int main(int argc, char const *argv[])
 {
     int fd;
@@ -94,22 +211,36 @@ int main(int argc, char const *argv[])
         return 0;
 
     recv(fd, buff, 1024, 0);
-    printf("Server said: %s\n", buff);
+    int id = atoi(&buff[0]);
+    // printf("buffer --> %s",&buff[0]);
+   // printf("buffer --> %d\n",id);
+    printf("Server said, you're client %s ", buff);
     memset(buff, 0, 1024);
-    int turn1, turn2, turn3;
+    int turn1, turn2;
+    int type;
+    int port;
     while (1)
     {
-        read(0, buff, 1024);
+        read(0, buff, 1); // get client type in shell
+        //type=buff[0];
+        // if(type==2){
+        //     read(fd,&port,sizeof(port));
+        //     while(port > 0 ){
+                 
+        //         printf("ports %d \n");
+        //         read(fd,&port,sizeof(port));
+        //     }
+        // }
         send(fd, buff, strlen(buff), 0);
         printf("Wait for Server response!\n");
+        printf("roomport is: %d\n",roomPort);
         recv(fd, buff, 1024, 0);
         roomPort = atoi(&buff[0]);
         if (roomPort > LocalPort)
         {
             turn1 = atoi(&buff[4]);
             turn2 = atoi(&buff[6]);
-            turn3 = atoi(&buff[8]);
-            printf("Server said: on Port %d: Welcome to your question room! \n ", roomPort);
+            printf("Server said: on Port %d:\n Welcome to your question room! \n ", roomPort);
             break;
         }
         else
@@ -118,11 +249,11 @@ int main(int argc, char const *argv[])
         }
         memset(buff, 0, 1024);
     }
-    if (roomPort > 0)
+     if (roomPort > 0)
     {
-        printf("Turns: %d %d %d! \n ", turn1, turn2, turn3);
-        QRoom(turn1, turn2, turn3);
+        printf("Players are: %d %d! \n ", turn1, turn2);
+        printf("__________________________ \n ");
+        Groom(turn1,turn2,id);
     }
-
     return 0;
 }
