@@ -8,8 +8,66 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <signal.h>
+#include "constant.h"
 
 #define LocalPort 8082
+///
+char board[3][3];
+const char PLAYER = 'X';
+const char COMPUTER = 'O';
+
+void resetBoard()
+{
+   for(int i = 0; i < 3; i++)
+   {
+      for(int j = 0; j < 3; j++)
+      {
+         board[i][j] = ' ';
+      }
+   }
+}
+void printBoard()
+{
+  
+   printf(" %c | %c | %c ", board[0][0], board[0][1], board[0][2]);
+   printf("\n---|---|---\n");
+   printf(" %c | %c | %c ", board[1][0], board[1][1], board[1][2]);
+   printf("\n---|---|---\n");
+   printf(" %c | %c | %c ", board[2][0], board[2][1], board[2][2]);
+   printf("\n");
+}
+int checkFreeSpaces()
+{
+   int freeSpaces = 9;
+
+   for(int i = 0; i < 3; i++)
+   {
+      for(int j = 0; j < 3; j++)
+      {
+         if(board[i][j] != ' ')
+         {
+            freeSpaces--;
+         }
+      }
+   }
+   return freeSpaces;
+}
+int checkWinner()
+{
+   //check rows
+   for(int i = 0; i < 3; i++)
+   {
+      if(board[i][0] == board[i][1] && board[i][0] == board[i][2])
+      {
+         if(board[i][0] == 'X')
+          return 1;
+         else if(board[i][0] == 'O'){return 2;}
+      }
+   }
+   return 0;
+}
+
+///
 int roomPort = 0;
 int connectServer(int port)
 {
@@ -82,44 +140,76 @@ void Groom(int t1, int t2,int id)
     signal(SIGALRM, alarm_handler);
     siginterrupt(SIGALRM, 1);
     int indexAnswer = 0;
+     int winner = 0;
+     char response = ' ';
+    // steps[CSTEPS][100];
+    //int stepIndex =0 ;
+    resetBoard();
     for (int j = 0; j < 9; j++)
     {
-        if (turns[j][0] == id)
+        if(winner == 0 && checkFreeSpaces() != 0)
         {
-            memset(buffer, 0, 1024);
-            printf("Your Turn\n");
-            int read_ret = 0;
-            if (j % 2 == 0)
-            {
-                printf("You have 60 seconds to play,player 1:(X)\n");
-                alarm(60);
-                read_ret = read(0, buffer, 1024);
-                alarm(0);
-                printf("\n");
-            }
-            else
-            {
-                printf("You have 60 seconds to play,player 2:(O)\n");
-                alarm(60);
-                read_ret = read(0, buffer, 1024);
-                alarm(0);
-                printf("\n");
-            }
-            if (read_ret < 0)
-            {
-                sprintf(buffer, "Time is over for %d\n", id);
-            }
-            sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
-            recv(sock, buffer, 1024, 0);
+                        //printBoard();
+                        if (turns[j][0] == id)
+                        {
+                        memset(buffer, 0, 1024);
+                        printf("Your Turn\n");
+                        int read_ret = 0;
+                        // -- player Move
+                        if (j % 2 == 0)
+                        {
+                            printf("You have 60 seconds to play,player 1:\n Enter row(1-3)+space+col(1-3):\n");
+                            alarm(60);
+                            read_ret = read(0, buffer, 1024);
+                            // ASCII TB 1 -> 49
+                          
+                            alarm(0);
+                            printf("\n");
+                        }
+                        // -- computer Move
+                        else
+                        {
+                            printf("You have 60 seconds to play,player 2:\n Enter row(1-3)+space+col(1-3):\n");
+                            alarm(60);
+                            read_ret = read(0, buffer, 1024);
+                            // ASCII TB 1 -> 49
+                         
+                            alarm(0);
+                            printf("\n");
+                        }
+                        if (read_ret < 0)
+                        {
+                            sprintf(buffer, "Time is over for %d\n", id);
+                        }
+                        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
+                        recv(sock, buffer, 1024, 0);
+
+                   
+                        if(sock%2==0)
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+                        else
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                        winner = checkWinner();
+                  
+                 
+                    }
+                    else
+                    {
+                        memset(buffer, 0, 1024);
+                        printf("Turn for others!\nWait...\n\n");
+                        recv(sock, buffer, 1024, 0);
+                        if(sock%2==0)
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                        else
+                            board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+                       
+                        printf("%s\n", buffer);
+                    }   
+                     printBoard(); 
+                     if(winner>0)
+                        printf("winnder is player%d\n",winner);         
         }
-        else
-        {
-            memset(buffer, 0, 1024);
-            printf("Turn for others!\nWait...\n\n");
-            recv(sock, buffer, 1024, 0);
-            
-            printf("%s\n", buffer);
-        }
+        
     }
     
 }
