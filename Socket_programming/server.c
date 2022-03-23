@@ -52,6 +52,7 @@ int numClient[2][50]={0}; // 50 room each room 2 player max
 int numOnline[50]={0}; // no of  online players in 50 rooms
 int availablePort = LocalPort+1;
 int trace = 0 ; // first available room for player 
+int avroom[50]={0};
 
 int checkClientType(char buffer[], int clientFD, int type)
 {
@@ -66,10 +67,10 @@ int checkClientType(char buffer[], int clientFD, int type)
             numOnline[trace] += 1 ; // add online num in the room               
            if(numOnline[trace] == 2){
                 printf("!!!Hooray %d & %d  Match found!New port generated\n", numClient[0][trace], numClient[1][trace]);
-             
                 //  printf("debug %s\n", buffer);
                 //fill the buffer with <- port , client[0] , client[1]
                 sprintf(buffer, "%d %d %d", availablePort,  numClient[0][trace], numClient[1][trace]);
+                avroom[trace]=availablePort;
                 trace += 1; // move to the next room
                 availablePort += 1;
                 return 1;
@@ -145,13 +146,26 @@ int main(int argc, char const *argv[])
                         continue;
                     }
                    
-                    int type = atoi(&buffer[0]);
+                    int type = atoi(&buffer[0]);    
                     if(checkClientType(buffer,i,type)==1){
                         for(int i=0;i<2;i++){
                             printf("debug %s\n", buffer);
                             send(numClient[i][trace-1], buffer, strlen(buffer), 0);
                         }
                         printf("Success!\n");
+                    }
+                    else if(type == 2){
+                        
+                        for(int j=0;j<50;j++)
+                        {
+                            if(avroom[j]>0){
+                                printf("room %d is available!\n" ,avroom[j]);
+                                send(i, &avroom[j], sizeof(int), 0);
+                            }
+                            
+                        }
+                        int a=0;
+                        send(i,&a,sizeof(int),0);
                     }
                     
                     memset(buffer, 0, 1024);

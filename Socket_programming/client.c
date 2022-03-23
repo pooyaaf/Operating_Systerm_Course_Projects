@@ -280,10 +280,25 @@ int main(int argc, char const *argv[])
     printf("Server said, you're client %s ", buff);
     memset(buff, 0, 1024);
     int turn1, turn2;
+    int type;
+    int port;
     while (1)
     {
         read(0, buff, 1024); // get client type in shell
-        send(fd, buff, strlen(buff), 0);
+        send(fd, buff, strlen(buff), 0);//send type client to server
+        //
+        type=buff[0];
+        type = type - CTOINT;
+        if(type==2){
+            printf("List available ports:\n");
+            read(fd,&port,sizeof(port));
+            while(port > 0 ){
+                printf("port: %d \n",port);
+                read(fd,&port,sizeof(port));
+            }
+            return 0;
+        }
+        //
         printf("Wait for Server response!\n");
         printf("roomport is: %d\n",roomPort);
         recv(fd, buff, 1024, 0);
@@ -292,7 +307,7 @@ int main(int argc, char const *argv[])
         {
             turn1 = atoi(&buff[4]);
             turn2 = atoi(&buff[6]);
-            printf("Server said: on Port %d:\n Welcome to your question room! \n ", roomPort);
+            printf("Server said: on Port %d:\n Welcome to your game room! \n ", roomPort);
             break;
         }
         else
