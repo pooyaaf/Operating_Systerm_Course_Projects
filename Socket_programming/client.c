@@ -18,6 +18,7 @@ char board[3][3];
 const char PLAYER = 'X';
 const char COMPUTER = 'O';
 int stepIndex =0 ;
+ char response = ' ';
 
 void resetBoard()
 {
@@ -143,7 +144,7 @@ void alarm_handler(int sig)
 {
     printf("Times out!\n");
 }
-
+int winner = 0;
 void Groom(int t1, int t2,int id)
 {
     //UDP set-up
@@ -176,8 +177,8 @@ void Groom(int t1, int t2,int id)
     signal(SIGALRM, alarm_handler);
     siginterrupt(SIGALRM, 1);
     int indexAnswer = 0;
-     int winner = 0;
-     char response = ' ';
+   
+    
     // steps[CSTEPS][100];
     
     resetBoard();
@@ -247,13 +248,16 @@ void Groom(int t1, int t2,int id)
                         //recv(sock, &winner,sizeof(int),0);
                      printBoard(); 
                      if(winner>0){
+                        
                         printf("winner is player%d\n",winner); 
-                   
+                       
                      }
                                 
         }
         
     }
+    if(winner == 0 )
+        printf("GAME Tie");
     
 }
 //
@@ -286,16 +290,61 @@ int main(int argc, char const *argv[])
     {
         read(0, buff, 1024); // get client type in shell
         send(fd, buff, strlen(buff), 0);//send type client to server
-        //
+        //Spectator
         type=buff[0];
         type = type - CTOINT;
         if(type==2){
+            int indx = 1 ;
             printf("List available ports:\n");
             read(fd,&port,sizeof(port));
             while(port > 0 ){
-                printf("port: %d \n",port);
+                printf("%d. port: %d \n",indx,port);
                 read(fd,&port,sizeof(port));
+                indx++;
             }
+            printf("Select among available rooms: \n");
+            char watchRoom;
+            read(0,&watchRoom,sizeof(watchRoom));
+            printf("User typed -- > %s\n Wait ... Connecting to the room (%d)\n",&watchRoom,watchRoom-(CTOINT)+(LocalPort));
+            send(fd,&watchRoom,sizeof(watchRoom),0);
+            printf("You are now connected to (%d) enjoy the show :_) \n\n",watchRoom-(CTOINT)+(LocalPort));
+              //UDP set-up
+                int sock, broadcast = 1, opt = 1;
+                char buffer[1024] = {0};
+                struct sockaddr_in bc_address;
+
+                sock = socket(AF_INET, SOCK_DGRAM, 0);
+                setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+                setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
+                bc_address.sin_family = AF_INET;
+                bc_address.sin_port = htons(watchRoom-(CTOINT)+(LocalPort));
+                bc_address.sin_addr.s_addr = inet_addr("192.168.1.255");
+
+                bind(sock, (struct sockaddr *)&bc_address, sizeof(bc_address));
+            //
+            int ix=0;
+            int wi1=0;
+            for (int j = 0; j < 9; j++)
+            {
+               
+                recv(sock, buffer, 1024, 0);
+                printf("Step %d\n\n\n",j+1);
+                if(j%2==0)
+                    board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                else
+                    board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+        
+                printBoard();
+                
+            
+                           
+            }
+      
+           
+
+           
+            //
             return 0;
         }
         //

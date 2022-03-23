@@ -166,6 +166,9 @@ int main(int argc, char const *argv[])
                         }
                         int a=0;
                         send(i,&a,sizeof(int),0);
+                        char watchRoom;
+                        recv(i , &watchRoom, sizeof(watchRoom), 0);
+                        printf("Client wants to connect to room port : %d\n",watchRoom-(CTOINT)+(LocalPort));
                     }
                     
                     memset(buffer, 0, 1024);
