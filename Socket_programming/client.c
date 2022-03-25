@@ -244,20 +244,44 @@ void Groom(int t1, int t2,int id)
                     stepIndex++;
                     //
                     winner = checkWinner(stepIndex);
-                        //send(sock, &winner, sizeof(int), 0);
-                        //recv(sock, &winner,sizeof(int),0);
+                      
                      printBoard(); 
                      if(winner>0){
                         
                         printf("winner is player%d\n",winner); 
-                       
+                        if(winner==1)
+                            buffer[1]='1';
+                        else if(winner==2)
+                            buffer[1]='2';
+                        else
+                            buffer[1]='3';
+                        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&bc_address, sizeof(bc_address));
+                        // perror("c");
+                       //Log:
+                       if(fd%2==1){
+                            char str1[11] = "4";
+                            char *logg = (char *)board;
+                            strcat(str1,logg);
+                            send(fd, str1, 10, 0);
+                            perror("c");
+                       }
+                            
+                      
                      }
+                    
+                   
                                 
         }
         
     }
-    if(winner == 0 )
-        printf("GAME Tie");
+    if(winner == 0 ){
+                            printf("GAME Tie");
+                            char str1[11] = "4";
+                            char *logg = (char *)board;
+                            strcat(str1,logg);
+                            send(fd, str1, 10, 0);
+                            perror("c");
+    }
     
 }
 //
@@ -290,6 +314,7 @@ int main(int argc, char const *argv[])
     {
         read(0, buff, 1024); // get client type in shell
         send(fd, buff, strlen(buff), 0);//send type client to server
+        printf("buffer 1 : %s\n",buff);
         //Spectator
         type=buff[0];
         type = type - CTOINT;
@@ -329,21 +354,32 @@ int main(int argc, char const *argv[])
             {
                
                 recv(sock, buffer, 1024, 0);
-                printf("Step %d\n\n\n",j+1);
-                if(j%2==0)
-                    board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
-                else
-                    board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
-        
-                printBoard();
+                if(buffer[1]== ' '){
+                    printf("Step %d\n\n\n",j+1);
+                    if(j%2==0)
+                        board[buffer[0] - '0'-1][buffer[2] - '0'-1] = COMPUTER;
+                    else
+                        board[buffer[0] - '0'-1][buffer[2] - '0'-1] = PLAYER;
+            
+                    printBoard();
+                }
+                else if(buffer[1]== '3'){
+                  
+                      printf("Tie");
+                      break;
+                }
+              
+                else{
+                  
+                      printf("winner --> %c\n",buffer[1]);
+                      break;
+                }
+                
                 
             
                            
             }
-      
-           
 
-           
             //
             return 0;
         }
@@ -372,4 +408,5 @@ int main(int argc, char const *argv[])
         Groom(turn1,turn2,id);
     }
     return 0;
+   
 }
