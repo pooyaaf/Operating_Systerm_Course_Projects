@@ -11,7 +11,7 @@
 #include "constant.h"
 
 #define LocalPort 8082
-
+int cnt = 0;
 int setupServer(int port)
 {
     struct sockaddr_in address;
@@ -52,6 +52,7 @@ int numClient[2][50]={0}; // 50 room each room 2 player max
 int numOnline[50]={0}; // no of  online players in 50 rooms
 int availablePort = LocalPort+1;
 int trace = 0 ; // first available room for player 
+int avroom[50]={0};
 
 int checkClientType(char buffer[], int clientFD, int type)
 {
@@ -66,10 +67,10 @@ int checkClientType(char buffer[], int clientFD, int type)
             numOnline[trace] += 1 ; // add online num in the room               
            if(numOnline[trace] == 2){
                 printf("!!!Hooray %d & %d  Match found!New port generated\n", numClient[0][trace], numClient[1][trace]);
-             
                 //  printf("debug %s\n", buffer);
                 //fill the buffer with <- port , client[0] , client[1]
                 sprintf(buffer, "%d %d %d", availablePort,  numClient[0][trace], numClient[1][trace]);
+                avroom[trace]=availablePort;
                 trace += 1; // move to the next room
                 availablePort += 1;
                 return 1;
@@ -84,8 +85,9 @@ int checkClientType(char buffer[], int clientFD, int type)
     }
     else
     {
-        sprintf(buffer, "You should choose between :(1 & 2) id \n");
-        send(clientFD, buffer, strlen(buffer), 0);
+        //sprintf(buffer, "You should choose between :(1 & 2) id \n");
+        char text[] ="You should choose between :(1 & 2) id \n";
+        send(clientFD, text, strlen(text), 0);
     }
     return 0;
 }
@@ -137,7 +139,7 @@ int main(int argc, char const *argv[])
                 else { // client sending msg
                     int bytes_received;
                     bytes_received = recv(i , buffer, 1024, 0);
-                    
+                    printf("Buffer -:%s\n",buffer);
                     if (bytes_received == 0) { // EOF
                         printf("client fd = %d closed\n", i);
                         close(i);
@@ -145,17 +147,66 @@ int main(int argc, char const *argv[])
                         continue;
                     }
                    
-                    int type = atoi(&buffer[0]);
+                    int type = atoi(&buffer[0]);    
                     if(checkClientType(buffer,i,type)==1){
                         for(int i=0;i<2;i++){
                             printf("debug %s\n", buffer);
                             send(numClient[i][trace-1], buffer, strlen(buffer), 0);
                         }
                         printf("Success!\n");
+                        
+    
                     }
-                    
+                  
+                    else if(type == 2){
+                        
+                        for(int j=0;j<50;j++)
+                        {
+                            if(avroom[j]>0){
+                                printf("room %d is available!\n" ,avroom[j]);
+                                send(i, &avroom[j], sizeof(int), 0);
+                            }
+                            
+                        }
+                        int a=0;
+                        send(i,&a,sizeof(int),0);
+                        char watchRoom;
+                        recv(i , &watchRoom, sizeof(watchRoom), 0);
+                        printf("Client wants to connect to room port : %d\n",watchRoom-(CTOINT)+(LocalPort));
+                    }
+                    else if(type==4){
+                        //log :
+                        printf("Creating Log ... Buffer : %s\n",buffer);
+                        recv(i , buffer, 9, 0);
+                        if(cnt%2 ==0){
+                        int new_fd;
+                        new_fd = open("log.txt", O_CREAT | O_APPEND | O_RDWR, 0664);
+                        write(new_fd, &buffer[1], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[2], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[3], 1);
+                        write(new_fd, "\n", 1);
+                        write(new_fd, &buffer[4], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[5], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[6], 1);
+                        write(new_fd, "\n", 1);
+                        write(new_fd, &buffer[7], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[8], 1);
+                        write(new_fd, " ", 1);
+                        write(new_fd, &buffer[9], 1);
+                        printf("%d\n",i);
+                        write(new_fd, "\n---\n", 5);
+                        close(new_fd);
+                        }cnt++;
+                        
+                    }
                     memset(buffer, 0, 1024);
                 }
+                
             }
         }
     }
