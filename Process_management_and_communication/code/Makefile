@@ -1,4 +1,4 @@
-MAINPARTS =  meanCalculator 
+MAINPARTS =  meanCalculator course class student
 all: $(MAINPARTS)
 
 % : %.c utility.c
