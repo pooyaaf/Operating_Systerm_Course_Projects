@@ -137,7 +137,7 @@ void forkInitChildren(void)
     int pid = getpid();
     if (parentPid > 0)
     {
-       // printf("parent process with pid : %d\n", pid);
+        // printf("parent process with pid : %d\n", pid);
 
         if (childsCount < classCount + 5) // plus reducer => childrenCount
         {
@@ -148,8 +148,9 @@ void forkInitChildren(void)
         {
             assignProcess();
             sleep(1); // wait until child forking done
-            printf("Done!\n");
+
             wait(NULL); // all children finish their job
+            printf("Done!\n");
             exit(0);
         }
     }
@@ -163,12 +164,12 @@ void forkInitChildren(void)
         {
             if (childsCount < classCount)
             {
-                //printf("Create Class with pid: %d\n", pid);
+                // printf("Create Class with pid: %d\n", pid);
                 createClass();
             }
             else
             {
-              // printf("Create Course with pid: %d\n", pid);
+                // printf("Create Course with pid: %d\n", pid);
                 // createCourse();
             }
         }

@@ -1,7 +1,7 @@
 MAINPARTS =  meanCalculator course class student
 all: $(MAINPARTS)
 
-% : %.c utility.c
+% : %.c 
 	gcc -o $@ $^
 
 clean:

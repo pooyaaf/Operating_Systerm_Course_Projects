@@ -19,10 +19,58 @@ int main(int argc, char *argv[])
 
     int temp;
 
-    while ((temp = read(readPipe, buf, 1000)) > 0)
+    if ((temp = read(readPipe, buf, 1000)) > 0)
     {
 
-        // printf("Student with pid : %d read from pip: %s\n", getpid(), buf);
+        //printf("Student with pid : %d read from pip: %s\n", getpid(), buf);
+        strcat(buf, ".csv"); // path create
+        FILE *fp = fopen(buf, "r");
+
+        char buffer[1024];
+
+        int row = 0;
+        int column = 0;
+
+        while (fgets(buffer,
+                     1024, fp))
+        {
+            column = 0;
+            row++;
+
+            // To avoid printing of column
+            // names in file can be changed
+            // according to need
+            if (row == 1)
+                continue;
+
+            // Splitting the data
+            char *value = strtok(buffer, ", \n");
+
+            while (value)
+            {
+                // Column 1
+                if (column == 0)
+                {
+                    printf("Course Title :");
+                }
+
+                // Column 2
+                if (column == 1)
+                {
+                    printf(" Grade :");
+                }
+
+               
+                printf("%s", value);
+                value = strtok(NULL, ", \n");
+                column++;
+            }
+
+            printf("\n");
+        }
+
+        fclose(fp);
     }
+    exit(0);
     return 0;
 }
