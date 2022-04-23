@@ -108,6 +108,7 @@ char *getName(int num)
 
 void assignProcess(void)
 {
+    
     // class
     close(parentToClass[0]); // close read
     int count = classCount;
@@ -123,6 +124,19 @@ void assignProcess(void)
         sleep(1);
     }
     close(parentToClass[1]);
+    // course
+    close(parentToLessons[0]);
+    write(parentToLessons[1],"./Course/Physics",sizeof("./Course/Physics"));
+    sleep(1);
+    write(parentToLessons[1],"./Course/English",sizeof("./Course/English"));
+    sleep(1);
+    write(parentToLessons[1],"./Course/Math",sizeof("./Course/Math"));
+    sleep(1);
+    write(parentToLessons[1],"./Course/Literature",sizeof("./Course/Literature"));
+    sleep(1);
+    write(parentToLessons[1],"./Course/Chemistry",sizeof("./Course/Chemistry"));
+    sleep(1);
+    close(parentToLessons[1]);
 }
 
 //
@@ -170,7 +184,7 @@ void forkInitChildren(void)
             else
             {
                 // printf("Create Course with pid: %d\n", pid);
-                // createCourse();
+                createCourse();
             }
         }
     }
