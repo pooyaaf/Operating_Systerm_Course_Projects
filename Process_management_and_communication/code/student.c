@@ -90,11 +90,11 @@ int main(int argc, char *argv[])
                     //     }
                     // }
 
-                    char shit1[100];
-                    strcpy(shit1, "./Course/");
-                    strcat(shit1, value);
-                    filed_dec = fopen(shit1, "a");
-                    // printf("file Desc writes shit1:%s \n", shit1);
+                    char renamed[100];
+                    strcpy(renamed, "./Course/");
+                    strcat(renamed, value);
+                    filed_dec = fopen(renamed, "a");
+                    // printf("file Desc writes renamed:%s \n", renamed);
 
                     // printf("Course Title :%s,",value);
                 }
