@@ -54,7 +54,8 @@ int main(int argc, char *argv[])
             // printf("%s\n", x);
             count++;
         }
-        printf("%s result :%.3f\n",buf,sum / count);
+        buf += 9;
+        printf("%s %.3f\n",buf,sum / count);
         fclose(fd);
     }
 
