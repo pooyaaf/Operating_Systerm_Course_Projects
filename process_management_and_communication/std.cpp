@@ -1,22 +1,4 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <iostream>
-#include <unistd.h> //for pipe
-#include <dirent.h> //for folder
-#include <fcntl.h>
-#include <stdio.h>
-#include <sstream>
-#include <fstream>
-#include <cstring>
-#include <string>
-#include <vector>
-
-#define SIZE 1024
-#define DEL ','
-#define COURSE_NUM 5
-#define STUDENT "./std.out"
-#define FIFO_ADDRESS "/tmp/myfifo"
+#include "defines.hpp"
 
 using namespace std;
 // global
@@ -73,7 +55,7 @@ vector<double> getScores(char *addr)
 void createTable(string studentName, vector<double> studentScores)
 {
     string res = "";
-    res += "isSTD ";
+    res += "VALID ";
 
     for (int j = 0; j < COURSE_NUM; j++)
         res += to_string(studentScores[j]) + " ";

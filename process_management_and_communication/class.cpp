@@ -1,24 +1,5 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <iostream>
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sstream>
-#include <fstream>
-#include <cstring>
-#include <string>
-#include <vector>
+#include "defines.hpp"
 
-#define SIZE 1024
-#define COURSE_NUM 5
-#define DEL ','
-
-#define STUDENT "./std.out"
-#define FIFO_ADDRESS "/tmp/myfifo"
-#define IS_VALID_DATA "isSTD"
 
 using namespace std;
 // Global
@@ -133,9 +114,9 @@ void forkInitChildren(int studentCount, char *address, int unnamedPipe, int name
     while ((childPid = wait(&s)) > 0)
         ;
 
-    string sol = "isSTD ";
+    string sol = "VALID ";
 
-    for (int j = 0; j < 5; j++)
+    for (int j = 0; j < COURSE_NUM; j++)
     {
         sol += to_string(avg[j] /= studentCount) + " ";
     }
@@ -175,7 +156,7 @@ vector<double> getScores(char *address)
             int stringDelimeter = line.find(DEL);
             string lesson = line.substr(0, stringDelimeter);
             string score = line.substr(stringDelimeter + 1);
-
+        
             if (lesson == courses[0])
                 scores[0] = stod(score);
             else if (lesson == courses[1])

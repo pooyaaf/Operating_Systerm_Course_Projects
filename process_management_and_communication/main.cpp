@@ -1,44 +1,11 @@
-#include <iostream>
-#include <string>
-#include <filesystem>
-#include <unistd.h>
-#include <string.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <charconv>
-#include <vector>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sstream>
-#include <fstream>
-#include <cstring>
-#include <errno.h>
-
-#define IS_VALID_DATA "isSTD"
-#define FIFO_ADDRESS "/tmp/myfifo"
-#define CURR_FOLDER "./"
-#define IN_FOLDER "/"
-#define AVERAGE "./average.out" // each lesson would use this to average
-#define CLASS "./class.out"     // each class would use this to prepare data
-#define MEDU_IS "class"
-
-#define MEDU_ID 14
-#define SIZE 1024
-#define COURSE_NUM 5
-
-std::string MEDU_DIR; // medium direction which is school/class
+#include "defines.hpp"
 
 using namespace std;
 
 // Global variable
-int classFD[2];  // unnamed
-int FDpipe; // named
+int classFD[2]; // unnamed
+int FDpipe;     // named
+string ClassDIR;
 //
 vector<double> avg(COURSE_NUM, 0);
 const string courses[] = {"Physics", "English", "Math", "Literature", "Chemistry"};
@@ -46,15 +13,15 @@ const string courses[] = {"Physics", "English", "Math", "Literature", "Chemistry
 int countClasses(char *);
 void createPipe();
 void forkInitChildren(int, char *);
-vector<string> split(string , char );
+vector<string> split(string, char);
 
 int main(int argc, char *argv[])
 {
     string getBaseDir = argv[1];
     int classCount = countClasses(argv[1]);
-    MEDU_DIR = CURR_FOLDER + getBaseDir + IN_FOLDER + MEDU_IS + "i" + IN_FOLDER;
-    char addr[MEDU_DIR.length() + 1];
-    strcpy(addr, MEDU_DIR.c_str());
+    ClassDIR = CURR_FOLDER + getBaseDir + IN_FOLDER + "class" + "i" + IN_FOLDER;
+    char addr[ClassDIR.length() + 1];
+    strcpy(addr, ClassDIR.c_str());
     // printf("%s\n",addr);
     // create pipe
     createPipe();
@@ -128,13 +95,13 @@ void forkInitChildren(int classCount, char *addr)
             if (read(classFD[0], buff, SIZE) == -1)
                 printf("Error in reading student classFD.\n");
             string buff_ = buff;
-/*
-Extract scores form table
-*/
+            /*
+            Extract scores form table
+            */
             if (buff_.substr(0, 5) == IS_VALID_DATA)
             {
                 vector<string> splited = split(buff_, ' ');
-                for (int j = 1; j <= 5; j++)
+                for (int j = 1; j <= COURSE_NUM; j++)
                     avg[j - 1] += stod(splited[j]);
             }
         }
