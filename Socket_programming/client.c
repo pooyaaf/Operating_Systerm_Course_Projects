@@ -338,7 +338,7 @@ int main(int argc, char const *argv[])
                 char buffer[1024] = {0};
                 struct sockaddr_in bc_address;
 
-                sock = socket(AF_INET, SOCK_DGRAM, 0);
+                sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP
                 setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
                 setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 

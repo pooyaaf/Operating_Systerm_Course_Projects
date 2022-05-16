@@ -67,6 +67,7 @@ void createPipe()
 void forkInitChildren(int classCount, char *addr)
 {
     // first create class childs then create course childs
+    
     // class childs
     for (int i = 1; i <= classCount; i++)
     {
@@ -96,7 +97,8 @@ void forkInitChildren(int classCount, char *addr)
                 printf("Error in reading student classFD.\n");
             string buff_ = buff;
             /*
-            Extract scores form table
+            Extract scores form table: 
+            if Vallid - > add each course grade in its avg .
             */
             if (buff_.substr(0, 5) == IS_VALID_DATA)
             {

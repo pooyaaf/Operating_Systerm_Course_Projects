@@ -157,7 +157,7 @@ int main(int argc, char const *argv[])
                         
     
                     }
-                  
+                    /* live games*/
                     else if(type == 2){
                         
                         for(int j=0;j<50;j++)
