@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
+#include <string.h>
 
 using namespace std::chrono;
 using namespace std;
@@ -221,17 +222,9 @@ void plus_filter()
         {
             for (int k = 0; k <= 2; k++)
             {
-                if (j == cols / 2  || i == rows / 2)
+                if (j == cols / 2 || i == rows / 2)
                 {
                     out[i][j][k] = 255.0;
-                    // if (i != 0)
-                    // {
-                    //     out[i - 1][j][k] = 255.0;
-                    // }
-                    // if (i != rows - 1)
-                    // {
-                    //     out[i + 1][j][k] = 255.0;
-                    // }
                 }
             }
         }
@@ -242,24 +235,64 @@ int main(int argc, char *argv[])
     char *fileBuffer;
     int bufferSize;
     char *fileName = argv[1];
+    int argindex = 1;
+    if (argc != 2)
+        argindex++;
     if (!fillAndAllocate(fileBuffer, fileName, rows, cols, bufferSize))
     {
         cout << "File read error" << endl;
         return 1;
     }
     auto start = high_resolution_clock::now();
-    // read input file
-    getPixlesFromBMP24(bufferSize, rows, cols, fileBuffer);
     // apply filters
-    flip_horizontally();
-    flip_vertically();
-    median_filter();
-    flip_color();
-    plus_filter();
-    // write output file
-    writeOutBmp24(fileBuffer, "output.bmp", bufferSize);
-    auto finish = std::chrono::high_resolution_clock::now();
-    auto milliseconds = chrono::duration_cast<chrono::milliseconds>(finish - start);
-    cout << "Speedup: " << milliseconds.count() << endl;
+    if (argindex != 1)
+    {
+        auto start = high_resolution_clock::now();
+        getPixlesFromBMP24(bufferSize, rows, cols, fileBuffer);
+        auto finish = std::chrono::high_resolution_clock::now();
+        cout << "read: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        // apply filters
+        start = std::chrono::high_resolution_clock::now();
+        flip_horizontally();
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "flip_horizontally: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        start = std::chrono::high_resolution_clock::now();
+        flip_vertically();
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "flip_vertically: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        start = std::chrono::high_resolution_clock::now();
+        median_filter();
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "median_filter: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        flip_color();
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "flip_color: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        plus_filter();
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "plus_filter: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+        // write output file
+        start = std::chrono::high_resolution_clock::now();
+        writeOutBmp24(fileBuffer, "output.bmp", bufferSize);
+        finish = std::chrono::high_resolution_clock::now();
+        cout << "write: " << std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count() << endl;
+    }
+    else
+    {
+        auto start = high_resolution_clock::now();
+        // read input file
+        getPixlesFromBMP24(bufferSize, rows, cols, fileBuffer);
+        // apply filters
+        flip_horizontally();
+        flip_vertically();
+        median_filter();
+        flip_color();
+        plus_filter();
+        // write output file
+        writeOutBmp24(fileBuffer, "output.bmp", bufferSize);
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto milliseconds = chrono::duration_cast<chrono::milliseconds>(finish - start);
+        cout << "Speedup: " << milliseconds.count() << endl;
+    }
+
     return 0;
 }
